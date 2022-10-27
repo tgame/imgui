@@ -7,6 +7,8 @@
 #include "imgui_impl_win32.h"
 #include <d3d9.h>
 #include <tchar.h>
+#include "imgui_dockgui.h"
+#include "imgui_dockgui.cpp"
 
 // Data
 static LPDIRECT3D9              g_pD3D = NULL;
@@ -18,6 +20,45 @@ bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
 void ResetDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+class DemoDockGUI
+    :public imgui_dockable::DockableUserGUI
+{
+public:
+    DemoDockGUI()
+        :DockableUserGUI("DemoDockGUI", "DemoDockGUI")
+    {
+    }
+    DockableUserGUI* DumpCreateWindow() override
+    {
+        static int s_id = 0;
+        s_id++;
+        DemoDockGUI* ui = new DemoDockGUI();
+        char buf[255];
+        sprintf(buf, "DemoDockGUI_%d", s_id);
+        ui->m_titleText = buf;
+        return ui;
+    }
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    float f = 0.0f;
+    int counter = 0;
+    void OnGUI() override
+    {
+                       // Create a window called "Hello, world!" and append into it.
+
+        ImGui::Text("This is some useful text.");   
+
+        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+            counter++;
+        ImGui::SameLine();
+        ImGui::Text("counter = %d", counter);
+
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    }
+};
 
 // Main code
 int main(int, char**)
@@ -70,7 +111,7 @@ int main(int, char**)
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
-
+    ImGui::RegisterTinyDockable(new DemoDockGUI);
     // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
@@ -97,7 +138,7 @@ int main(int, char**)
         ImGui_ImplDX9_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-
+        ImGui::RenderTinyDockable();
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
